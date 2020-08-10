@@ -5,7 +5,7 @@ from tencentcloud.asr.v20190614 import models
 from common.auth import get_asr_auth_client
 
 
-def audio_file_recognize(filepath):
+def recognize_audio_file(filepath):
     with open(filepath, 'rb') as f:
         data = f.read()
         data_len = len(data)
@@ -23,12 +23,3 @@ def audio_file_recognize(filepath):
     req._deserialize(params)
     resp = get_asr_auth_client().CreateRecTask(req)
     print(resp.to_json_string())
-
-
-def main():
-    path = ''
-    audio_file_recognize(path)
-
-
-if __name__ == '__main__':
-    main()
