@@ -80,6 +80,7 @@ class AudioRecognition:
         req.EngineModelType = self.scenario
         resp = self.client.CreateRecTask(req)
         reply = json.loads(resp.to_json_string())
+        print(f'Crated a task {reply} for {filepath}')
         return reply
 
     def query_task(self, task_id: int) -> dict:
@@ -101,7 +102,7 @@ class AudioRecognition:
 
 
 def main():
-    result = AudioRecognition().process_from_file('./samples/sample_en.mp3')
+    result = AudioRecognition().process_from_file('./samples/genesis.001.mp3')
     print(result)
 
 
