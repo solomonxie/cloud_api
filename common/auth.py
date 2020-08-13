@@ -8,6 +8,7 @@ from tencentcloud.common import credential
 from tencentcloud.common.profile.client_profile import ClientProfile
 from tencentcloud.common.profile.http_profile import HttpProfile
 from tencentcloud.asr.v20190614 import asr_client
+from tencentcloud.tmt.v20180321 import tmt_client
 
 import settings
 
@@ -15,11 +16,23 @@ import settings
 def get_asr_auth_client():
     cred = credential.Credential(settings.SECRET_ID, settings.SECRET_KEY)
     httpProfile = HttpProfile()
-    httpProfile.endpoint = "asr.tencentcloudapi.com"
+    httpProfile.endpoint = 'asr.tencentcloudapi.com'
     clientProfile = ClientProfile()
     clientProfile.httpProfile = httpProfile
     clientProfile.signMethod = "TC3-HMAC-SHA256"
     client = asr_client.AsrClient(cred, settings.REGION, clientProfile)
+
+    return client
+
+
+def get_tmt_auth_client():
+    cred = credential.Credential(settings.SECRET_ID, settings.SECRET_KEY)
+    httpProfile = HttpProfile()
+    httpProfile.endpoint = 'tmt.tencentcloudapi.com'
+    clientProfile = ClientProfile()
+    clientProfile.httpProfile = httpProfile
+    clientProfile.signMethod = "TC3-HMAC-SHA256"
+    client = tmt_client.TmtClient(cred, settings.REGION, clientProfile)
 
     return client
 
