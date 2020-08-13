@@ -55,8 +55,13 @@ class AudioRecognition:
         self.client = get_asr_auth_client()
         self.scenario = kwargs.get('scenario') or '16k_zh'
 
-    def process_from_file(self, filepath):
+    def process_from_file(self, filepath: str) -> dict:
         task = self.create_task_from_file(filepath)
+        result = self.query_task(task['Data']['TaskId'])
+        return result
+
+    def process_from_url(self, url: str) -> dict:
+        task = self.create_task_from_url(url)
         result = self.query_task(task['Data']['TaskId'])
         return result
 
@@ -83,11 +88,38 @@ class AudioRecognition:
         print(f'Crated a task {reply} for {filepath}')
         return reply
 
+    def create_task_from_url(self, url: str) -> dict:
+        # Doc: https://cloud.tencent.com/document/product/1093/35799
+        req = models.CreateRecTaskRequest()
+        params = {
+            "EngineModelType": "16k_0",
+            "ChannelNum": 1,
+            "ResTextFormat": 0,
+            "SourceType": 0,
+            "Url": url,
+            # Per audio settings
+            "SpeakerDiarization": 1,
+            "SpeakerNumber": 2,
+            "FilterPunc": 1,
+            "FilterModal": 2,
+            "ConvertNumMode": 1,
+        }
+        req._deserialize(params)
+        req.EngineModelType = self.scenario
+        resp = self.client.CreateRecTask(req)
+        reply = json.loads(resp.to_json_string())
+        print(f'Crated a task {reply} for {url}')
+        return reply
+
     def query_task(self, task_id: int) -> dict:
         status = 0
         while status in [0, 1]:
             print('Fetching result...')
-            result = self.query_task_once(task_id)
+            try:
+                result = self.query_task_once(task_id)
+            except Exception as ex:
+                print(ex)
+                continue
             status = result['Data']['Status']
             sleep(5)
         print('Fetched result:')
@@ -102,8 +134,18 @@ class AudioRecognition:
 
 
 def main():
-    result = AudioRecognition().process_from_file('./samples/genesis.001.mp3')
+    # From local file
+    # result = AudioRecognition().process_from_file('./samples/genesis.001.mp3')
+
+    # From URL
+    # url = 'https://public-1300134733.cos.ap-beijing.myqcloud.com/%E5%88%9B%E4%B8%96%E8%AE%B0039-1.mp3'
+    # result = AudioRecognition().process_from_url(url)
+
+    # Query directly
+    result = AudioRecognition().query_task(857704593)
     print(result)
+    with open('/tmp/transcript.txt', 'w') as f:
+        f.write(json.dumps(result))
 
 
 if __name__ == '__main__':
