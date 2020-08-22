@@ -53,19 +53,18 @@ class AudioRecognition:
 
     def __init__(self, **kwargs):
         self.client = get_asr_auth_client()
-        self.scenario = kwargs.get('scenario') or '16k_zh'
 
-    def process_from_file(self, filepath: str) -> dict:
-        task = self.create_task_from_file(filepath)
+    def process_from_file(self, filepath: str, **specified) -> dict:
+        task = self.create_task_from_file(filepath, specified)
         result = self.query_task(task['Data']['TaskId'])
         return result
 
-    def process_from_url(self, url: str) -> dict:
-        task = self.create_task_from_url(url)
+    def process_from_url(self, url: str, **specified) -> dict:
+        task = self.create_task_from_url(url, specified)
         result = self.query_task(task['Data']['TaskId'])
         return result
 
-    def create_task_from_file(self, filepath: str) -> dict:
+    def create_task_from_file(self, filepath: str, specified: dict) -> dict:
         # Doc: https://cloud.tencent.com/document/product/1093/35799
         with open(filepath, 'rb') as f:
             data = f.read()
@@ -74,25 +73,32 @@ class AudioRecognition:
 
         req = models.CreateRecTaskRequest()
         params = {
-            "EngineModelType": "16k_0",
+            "EngineModelType": '16k_zh',
             "ChannelNum": 1,
             "ResTextFormat": 0,
             "SourceType": 1,
             "Data": base64_wav,
             "DataLen": data_len,
+            # Per audio settings
+            "SpeakerDiarization": 1,
+            "SpeakerNumber": 2,
+            "FilterPunc": 1,
+            "FilterModal": 2,
+            "ConvertNumMode": 1,
         }
+        params.update(specified)
+        print(f'Task request: {params}')
         req._deserialize(params)
-        req.EngineModelType = self.scenario
         resp = self.client.CreateRecTask(req)
         reply = json.loads(resp.to_json_string())
-        print(f'Crated a task {reply} for {filepath}')
+        print(f'Created a task {reply} for {filepath}')
         return reply
 
-    def create_task_from_url(self, url: str) -> dict:
+    def create_task_from_url(self, url: str, specified: dict) -> dict:
         # Doc: https://cloud.tencent.com/document/product/1093/35799
         req = models.CreateRecTaskRequest()
         params = {
-            "EngineModelType": "16k_0",
+            "EngineModelType": '16k_zh',
             "ChannelNum": 1,
             "ResTextFormat": 0,
             "SourceType": 0,
@@ -104,11 +110,12 @@ class AudioRecognition:
             "FilterModal": 2,
             "ConvertNumMode": 1,
         }
+        params.update(specified)
+        print(f'Task request: {params}')
         req._deserialize(params)
-        req.EngineModelType = self.scenario
         resp = self.client.CreateRecTask(req)
         reply = json.loads(resp.to_json_string())
-        print(f'Crated a task {reply} for {url}')
+        print(f'Created a task {reply} for {url}')
         return reply
 
     def query_task(self, task_id: int) -> dict:
@@ -138,14 +145,18 @@ def main():
     # result = AudioRecognition().process_from_file('./samples/genesis.001.mp3')
 
     # From URL
-    # url = 'https://public-1300134733.cos.ap-beijing.myqcloud.com/%E5%88%9B%E4%B8%96%E8%AE%B0039-1.mp3'
-    # result = AudioRecognition().process_from_url(url)
+    url = 'https://public-1300134733.cos.ap-beijing.myqcloud.com/%E5%88%9B%E4%B8%96%E8%AE%B0039-1.mp3'
+    result = AudioRecognition().process_from_url(url, EngineModelType='16k_en', SpeakerDiarization=0)
 
     # Query directly
-    result = AudioRecognition().query_task(857704593)
+    # result = AudioRecognition().query_task(867064529)
+
+    # Save result
     print(result)
-    with open('/tmp/transcript.txt', 'w') as f:
+    with open('/tmp/transcript.json', 'w') as f:
         f.write(json.dumps(result))
+    with open('/tmp/transcript.txt', 'w') as f:
+        f.write(result['Data']['Result'])
 
 
 if __name__ == '__main__':
