@@ -1,3 +1,12 @@
+import sys
+import json
+import base64
+from time import sleep
+
+from tencentcloud.asr.v20190614 import models
+
+from common.auth import get_asr_auth_client
+
 """
 EngineModelType (Scenarios):
 - Phone:
@@ -40,13 +49,6 @@ Reply of query task:
         "RequestId": "4f87d14f-8b0f-4970-b517-eaf8c5df2e9d"
     }
 """
-import json
-import base64
-from time import sleep
-
-from tencentcloud.asr.v20190614 import models
-
-from common.auth import get_asr_auth_client
 
 
 class AudioRecognition:
@@ -141,15 +143,18 @@ class AudioRecognition:
 
 
 def main():
-    # From local file
-    # result = AudioRecognition().process_from_file('./samples/genesis.001.mp3')
+    if len(sys.argv) < 3:
+        raise RuntimeError('Please specify 1) method: local|url|query  2) source: local_path|url|task_id')
 
-    # From URL
-    url = 'https://public-1300134733.cos.ap-beijing.myqcloud.com/%E5%88%9B%E4%B8%96%E8%AE%B0039-1.mp3'
-    result = AudioRecognition().process_from_url(url, EngineModelType='16k_en', SpeakerDiarization=0)
-
-    # Query directly
-    # result = AudioRecognition().query_task(867064529)
+    method, source = sys.argv[1:3]
+    if method == 'local':
+        # path = './samples/genesis.001.mp3'
+        result = AudioRecognition().process_from_file(source)
+    elif method == 'url':
+        # url = 'https://public-1300134733.cos.ap-beijing.myqcloud.com/%E5%88%9B%E4%B8%96%E8%AE%B0039-1.mp3'
+        result = AudioRecognition().process_from_url(source, EngineModelType='16k_en', SpeakerDiarization=0)
+    elif method == 'query':
+        result = AudioRecognition().query_task(867064529)
 
     # Save result
     print(result)
